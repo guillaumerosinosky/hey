@@ -26,6 +26,7 @@ import (
 	"os"
 	"sync"
 	"time"
+	"math/rand"
 
 	"golang.org/x/net/http2"
 )
@@ -88,6 +89,12 @@ type Work struct {
 	// Writer is where results will be written. If nil, results are written to stdout.
 	Writer io.Writer
 
+	// CSV array used for body
+	RequestBodyArray [][]byte
+
+	// Random seed used for choosing CSV file entry
+	CsvFileSeed int
+
 	initOnce sync.Once
 	results  chan *result
 	stopCh   chan struct{}
@@ -114,6 +121,7 @@ func (b *Work) Init() {
 // Run makes all the requests, prints the summary. It blocks until
 // all work is done.
 func (b *Work) Run() {
+	rand.Seed(int64(b.CsvFileSeed))
 	b.Init()
 	b.start = now()
 	b.report = newReport(b.writer(), b.results, b.Output, b.N)
@@ -144,9 +152,17 @@ func (b *Work) makeRequest(c *http.Client) {
 	s := now()
 	var size int64
 	var code int
+	var req *http.Request
 	var dnsStart, connStart, resStart, reqStart, delayStart time.Duration
 	var dnsDuration, connDuration, resDuration, reqDuration, delayDuration time.Duration
-	req := cloneRequest(b.Request, b.RequestBody)
+	if len(b.RequestBodyArray) > 0 {
+		var index int		
+		index = rand.Intn(len(b.RequestBodyArray))
+		req = cloneRequest(b.Request, b.RequestBodyArray[index])
+	} else {
+		req = cloneRequest(b.Request, b.RequestBody)
+	}
+	
 	trace := &httptrace.ClientTrace{
 		DNSStart: func(info httptrace.DNSStartInfo) {
 			dnsStart = now()

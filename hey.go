@@ -28,6 +28,10 @@ import (
 	"runtime"
 	"strings"
 	"time"
+	"encoding/csv"
+	"io"
+	"log"
+	"bufio"
 
 	"github.com/rakyll/hey/requester"
 )
@@ -63,6 +67,7 @@ var (
 	disableKeepAlives  = flag.Bool("disable-keepalive", false, "")
 	disableRedirects   = flag.Bool("disable-redirects", false, "")
 	proxyAddr          = flag.String("x", "", "")
+	csvFileSeed        = flag.Int("csvFileSeed", -1, "")
 )
 
 var usage = `Usage: hey [options...] <url>
@@ -99,6 +104,7 @@ Options:
   -disable-redirects    Disable following of HTTP redirects
   -cpus                 Number of used cpu cores.
                         (default for current machine is %d cores)
+  -csvFileSeed          Activate random CSV file body mode with provided seed
 `
 
 func main() {
@@ -169,15 +175,31 @@ func main() {
 	}
 
 	var bodyAll []byte
+	var bodyArray [][]byte
 	if *body != "" {
 		bodyAll = []byte(*body)
 	}
 	if *bodyFile != "" {
-		slurp, err := ioutil.ReadFile(*bodyFile)
-		if err != nil {
-			errAndExit(err.Error())
+		if *csvFileSeed != -1 {
+			csvFile, _ := os.Open(*bodyFile)
+			reader := csv.NewReader(bufio.NewReader(csvFile))
+			for {
+				line, error := reader.Read()
+				if error == io.EOF {
+					break
+				} else if error != nil {
+					log.Fatal(error)
+				}
+				bodyArray = append(bodyArray, []byte(line[0]))
+			}
+
+		} else {
+			slurp, err := ioutil.ReadFile(*bodyFile)
+			if err != nil {
+				errAndExit(err.Error())
+			}
+			bodyAll = slurp
 		}
-		bodyAll = slurp
 	}
 
 	var proxyURL *gourl.URL
@@ -225,6 +247,8 @@ func main() {
 		H2:                 *h2,
 		ProxyAddr:          proxyURL,
 		Output:             *output,
+		RequestBodyArray:   bodyArray,
+		CsvFileSeed:        *csvFileSeed,
 	}
 	w.Init()
 
