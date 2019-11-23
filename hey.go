@@ -33,7 +33,7 @@ import (
 	"log"
 	"bufio"
 
-	"github.com/rakyll/hey/requester"
+	"github.com/guillaumerosinosky/hey/requester"
 )
 
 const (
