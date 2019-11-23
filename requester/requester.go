@@ -156,13 +156,13 @@ func (b *Work) makeRequest(c *http.Client) {
 	var dnsStart, connStart, resStart, reqStart, delayStart time.Duration
 	var dnsDuration, connDuration, resDuration, reqDuration, delayDuration time.Duration
 	if len(b.RequestBodyArray) > 0 {
-		var index int		
+		var index int
 		index = rand.Intn(len(b.RequestBodyArray))
 		req = cloneRequest(b.Request, b.RequestBodyArray[index])
 	} else {
 		req = cloneRequest(b.Request, b.RequestBody)
 	}
-	
+
 	trace := &httptrace.ClientTrace{
 		DNSStart: func(info httptrace.DNSStartInfo) {
 			dnsStart = now()
