@@ -119,7 +119,7 @@ func runReporter(r *report) {
 						"offset": res.offset.Seconds(),
 						"response_time": res.duration.Seconds(),
 						"connection_duration": res.connDuration.Seconds(),
-						"dns_duration": res.connDuration.Seconds(),
+						"dns_duration": res.dnsDuration.Seconds(),
 						"req_duration": res.reqDuration.Seconds(),
 						"res_duration": res.resDuration.Seconds(),
 						"delay_duration": res.delayDuration.Seconds(),
