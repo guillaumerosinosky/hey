@@ -21,6 +21,8 @@ import (
 	"log"
 	"sort"
 	"time"
+
+	"github.com/fluent/fluent-logger-golang/fluent"
 )
 
 const (
@@ -59,11 +61,15 @@ type report struct {
 	sizeTotal int64
 	numRes    int64
 	output    string
+	resultsArray []map[string]interface{}
 
 	w io.Writer
+	fluentdAddress string
+	experimentationName string
 }
 
-func newReport(w io.Writer, results chan *result, output string, n int) *report {
+
+func newReport(w io.Writer, results chan *result, output string, n int, fluentdAddress string, experimentationName string) *report {
 	cap := min(n, maxRes)
 	return &report{
 		output:      output,
@@ -78,6 +84,9 @@ func newReport(w io.Writer, results chan *result, output string, n int) *report 
 		delayLats:   make([]float64, 0, cap),
 		lats:        make([]float64, 0, cap),
 		statusCodes: make([]int, 0, cap),
+		resultsArray: make([]map[string]interface{}, 0, cap),
+		fluentdAddress: fluentdAddress,
+		experimentationName: experimentationName,
 	}
 }
 
@@ -103,7 +112,24 @@ func runReporter(r *report) {
 				r.resLats = append(r.resLats, res.resDuration.Seconds())
 				r.statusCodes = append(r.statusCodes, res.statusCode)
 				r.offsets = append(r.offsets, res.offset.Seconds())
+
+				if r.fluentdAddress != "" {
+					var resultExport = map[string]interface{}{
+						"status_code":  res.statusCode,
+						"offset": res.offset.Seconds(),
+						"response_time": res.duration.Seconds(),
+						"connection_duration": res.connDuration.Seconds(),
+						"dns_duration": res.connDuration.Seconds(),
+						"req_duration": res.reqDuration.Seconds(),
+						"res_duration": res.resDuration.Seconds(),
+						"delay_duration": res.delayDuration.Seconds(),
+						"content_length": res.contentLength,
+						"start": float64(res.start.UnixNano()) / 1000000,
+					}
+					r.resultsArray = append(r.resultsArray, resultExport)
+				}
 			}
+
 			if res.contentLength > 0 {
 				r.sizeTotal += res.contentLength
 			}
@@ -123,6 +149,14 @@ func (r *report) finalize(total time.Duration) {
 	r.avgReq = r.avgReq / float64(len(r.lats))
 	r.avgRes = r.avgRes / float64(len(r.lats))
 	r.print()
+	// Export to fluentd
+	if r.fluentdAddress != "" {
+		print("Logging to fluentd on " + r.fluentdAddress + "\n")
+		var fluent, _ = fluent.New(fluent.Config{FluentPort: 24224, FluentHost: r.fluentdAddress, TagPrefix: "private-recsys." + r.experimentationName})
+		for _,res := range r.resultsArray {
+			fluent.PostWithTime("locust_request_result", time.Now(), res)
+		}
+	}
 }
 
 func (r *report) print() {

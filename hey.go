@@ -67,7 +67,10 @@ var (
 	disableKeepAlives  = flag.Bool("disable-keepalive", false, "")
 	disableRedirects   = flag.Bool("disable-redirects", false, "")
 	proxyAddr          = flag.String("x", "", "")
+
 	csvFileSeed        = flag.Int("csvFileSeed", -1, "")
+	fluentdAddress     = flag.String("fluentdAddress", "","")
+	experimentationName = flag.String("experimentationName", "test", "")
 )
 
 var usage = `Usage: hey [options...] <url>
@@ -105,8 +108,9 @@ Options:
   -cpus                 Number of used cpu cores.
                         (default for current machine is %d cores)
   -csvFileSeed          Activate random CSV file body mode with provided seed
+  -fluentdAddress       If defined, send to fluentd results
+  -experimentationName  Experimentation name used for tag in fluentd
 `
-
 func main() {
 	flag.Usage = func() {
 		fmt.Fprint(os.Stderr, fmt.Sprintf(usage, runtime.NumCPU()))
@@ -249,6 +253,8 @@ func main() {
 		Output:             *output,
 		RequestBodyArray:   bodyArray,
 		CsvFileSeed:        *csvFileSeed,
+		FluentdAddress:     *fluentdAddress,
+		ExperimentationName:*experimentationName,
 	}
 	w.Init()
 

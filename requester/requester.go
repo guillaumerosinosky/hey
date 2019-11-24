@@ -46,6 +46,7 @@ type result struct {
 	resDuration   time.Duration // response "read" duration
 	delayDuration time.Duration // delay between response and request
 	contentLength int64
+	start         time.Time
 }
 
 type Work struct {
@@ -95,6 +96,12 @@ type Work struct {
 	// Random seed used for choosing CSV file entry
 	CsvFileSeed int
 
+	// fluentd address if defined
+	FluentdAddress string
+
+	// Experimantion name used for tag in fluentd
+	ExperimentationName string
+
 	initOnce sync.Once
 	results  chan *result
 	stopCh   chan struct{}
@@ -124,7 +131,7 @@ func (b *Work) Run() {
 	rand.Seed(int64(b.CsvFileSeed))
 	b.Init()
 	b.start = now()
-	b.report = newReport(b.writer(), b.results, b.Output, b.N)
+	b.report = newReport(b.writer(), b.results, b.Output, b.N, b.FluentdAddress, b.ExperimentationName)
 	// Run the reporter first, it polls the result channel until it is closed.
 	go func() {
 		runReporter(b.report)
@@ -210,6 +217,7 @@ func (b *Work) makeRequest(c *http.Client) {
 		reqDuration:   reqDuration,
 		resDuration:   resDuration,
 		delayDuration: delayDuration,
+		start:         time.Now(),
 	}
 }
 
