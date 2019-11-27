@@ -187,6 +187,7 @@ func main() {
 		if *csvFileSeed != -1 {
 			csvFile, _ := os.Open(*bodyFile)
 			reader := csv.NewReader(bufio.NewReader(csvFile))
+			reader.LazyQuotes = true
 			for {
 				line, error := reader.Read()
 				if error == io.EOF {
