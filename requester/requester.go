@@ -165,6 +165,10 @@ func (b *Work) makeRequest(c *http.Client) {
 	if len(b.RequestBodyArray) > 0 {
 		var index int
 		index = rand.Intn(len(b.RequestBodyArray))
+		debug, _ := os.LookupEnv("DEBUG")
+		if debug == "1" {
+			print(string(b.RequestBodyArray[index]))
+		}
 		req = cloneRequest(b.Request, b.RequestBodyArray[index])
 	} else {
 		req = cloneRequest(b.Request, b.RequestBody)

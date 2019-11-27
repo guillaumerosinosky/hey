@@ -116,13 +116,13 @@ func runReporter(r *report) {
 				if r.fluentdAddress != "" {
 					var resultExport = map[string]interface{}{
 						"status_code":  res.statusCode,
-						"offset": res.offset.Seconds(),
-						"response_time": res.duration.Seconds(),
-						"connection_duration": res.connDuration.Seconds(),
-						"dns_duration": res.dnsDuration.Seconds(),
-						"req_duration": res.reqDuration.Seconds(),
-						"res_duration": res.resDuration.Seconds(),
-						"delay_duration": res.delayDuration.Seconds(),
+						"offset": float64(res.offset) / 1000000,
+						"response_time": float64(res.duration) / 1000000,
+						"connection_duration": float64(res.connDuration) / 1000000,
+						"dns_duration": float64(res.dnsDuration) / 1000000,
+						"req_duration": float64(res.reqDuration) / 1000000,
+						"res_duration": float64(res.resDuration) / 1000000,
+						"delay_duration": float64(res.delayDuration) / 1000000,
 						"content_length": res.contentLength,
 						"start": float64(res.start.UnixNano()) / 1000000,
 					}
