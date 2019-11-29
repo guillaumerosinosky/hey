@@ -71,6 +71,7 @@ var (
 	csvFileSeed        = flag.Int("csvFileSeed", -1, "")
 	fluentdAddress     = flag.String("fluentdAddress", "","")
 	experimentationName = flag.String("experimentationName", "test", "")
+	randomShift = flag.Float64("randomShift", 0, "")
 )
 
 var usage = `Usage: hey [options...] <url>
@@ -110,6 +111,7 @@ Options:
   -csvFileSeed          Activate random CSV file body mode with provided seed
   -fluentdAddress       If defined, send to fluentd results
   -experimentationName  Experimentation name used for tag in fluentd
+  -randomShift          Shift for each concurrent 
 `
 func main() {
 	flag.Usage = func() {
@@ -256,6 +258,7 @@ func main() {
 		CsvFileSeed:        *csvFileSeed,
 		FluentdAddress:     *fluentdAddress,
 		ExperimentationName:*experimentationName,
+		RandomShift: *randomShift,
 	}
 	w.Init()
 

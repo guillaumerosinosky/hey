@@ -27,7 +27,7 @@ import (
 	"sync"
 	"time"
 	"math/rand"
-
+	"fmt"
 	"golang.org/x/net/http2"
 )
 
@@ -99,8 +99,11 @@ type Work struct {
 	// fluentd address if defined
 	FluentdAddress string
 
-	// Experimantion name used for tag in fluentd
+	// Experimentation name used for tag in fluentd
 	ExperimentationName string
+
+	// Random shift
+	RandomShift float64
 
 	initOnce sync.Once
 	results  chan *result
@@ -167,7 +170,7 @@ func (b *Work) makeRequest(c *http.Client) {
 		index = rand.Intn(len(b.RequestBodyArray))
 		debug, _ := os.LookupEnv("DEBUG")
 		if debug == "1" {
-			print(string(b.RequestBodyArray[index]))
+			print(string(b.RequestBodyArray[index]) + "\n")
 		}
 		req = cloneRequest(b.Request, b.RequestBodyArray[index])
 	} else {
@@ -235,6 +238,13 @@ func (b *Work) runWorker(client *http.Client, n int) {
 		client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		}
+	}
+	if b.RandomShift > 0 {
+		var randomThrottle <- chan time.Time
+		var randomShift = time.Duration(rand.Intn(int(1e6 * b.RandomShift)))
+		fmt.Printf("Random shift %f \n",randomShift)
+		randomThrottle = time.Tick(randomShift * time.Microsecond)
+		<-randomThrottle
 	}
 	for i := 0; i < n; i++ {
 		// Check if application is stopped. Do not send into a closed channel.
